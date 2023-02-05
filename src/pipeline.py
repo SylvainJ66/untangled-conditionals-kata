@@ -10,11 +10,7 @@ class Pipeline:
                 self.log.info("Tests passed")
                 if "success" == project.deploy():
                     self.log.info("Deployment successful")
-                    if self.config.send_email_summary():
-                        self.log.info("Sending email")
-                        self.emailer.send("Deployment completed successfully")
-                    else:
-                        self.log.info("Email disabled")
+                    self.send_email("Deployment completed successfully")
                 else:
                     self.log.error("Deployment failed")
                     if self.config.send_email_summary():
@@ -33,21 +29,14 @@ class Pipeline:
             self.log.info("No tests")
             if "success" == project.deploy():
                 self.log.info("Deployment successful")
-                deploy_successful = True
-                if self.config.send_email_summary():
-                    self.log.info("Sending email")
-                    self.emailer.send("Deployment completed successfully")
-                else:
-                    self.log.info("Email disabled")
+                self.send_email("Deployment completed successfully")
             else:
                 self.log.error("Deployment failed")
-                deploy_successful = False
-                if self.config.send_email_summary():
-                    self.log.info("Sending email")
-                    self.emailer.send("Deployment failed")
-                else:
-                    self.log.info("Email disabled")
+                self.send_email("Deployment failed")
 
-
-
-
+    def send_email(self, email_message):
+        if self.config.send_email_summary():
+            self.log.info("Sending email")
+            self.emailer.send(email_message)
+        else:
+            self.log.info("Email disabled")
