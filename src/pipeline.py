@@ -12,22 +12,25 @@ class Pipeline:
             if "success" == project.run_tests():
                 self.log.info("Tests passed")
                 tests_passed = True
+                if "success" == project.deploy():
+                    self.log.info("Deployment successful")
+                    deploy_successful = True
+                else:
+                    self.log.error("Deployment failed")
+                    deploy_successful = False
             else:
                 self.log.error("Tests failed")
                 tests_passed = False
+                deploy_successful = False
         else:
             self.log.info("No tests")
             tests_passed = True
-
-        if tests_passed:
             if "success" == project.deploy():
                 self.log.info("Deployment successful")
                 deploy_successful = True
             else:
                 self.log.error("Deployment failed")
                 deploy_successful = False
-        else:
-            deploy_successful = False
 
         if self.config.send_email_summary():
             self.log.info("Sending email")
