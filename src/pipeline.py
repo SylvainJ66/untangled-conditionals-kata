@@ -1,3 +1,11 @@
+NO_TESTS = "No tests"
+TESTS_PASSED = "Tests passed"
+DEPLOYMENT_FAILED = "Deployment failed"
+COMPLETED_SUCCESSFULLY = "Deployment completed successfully"
+DEPLOYMENT_SUCCESSFUL = "Deployment successful"
+LOG_FAILED = "Tests failed"
+
+
 class Pipeline:
     def __init__(self, config, emailer, log):
         self.config = config
@@ -6,25 +14,26 @@ class Pipeline:
 
     def run(self, project):
         if project.has_tests():
-            if "success" == project.run_tests():
-                self.log.info("Tests passed")
-                if "success" == project.deploy():
-                    self.log.info("Deployment successful")
-                    self.send_email("Deployment completed successfully")
-                else:
-                    self.log.error("Deployment failed")
-                    self.send_email("Deployment failed")
-            else:
-                self.log.error("Tests failed")
-                self.send_email("Tests failed")
-        else:
-            self.log.info("No tests")
+            if "success" != project.run_tests():
+                self.log.error(LOG_FAILED)
+                self.send_email(LOG_FAILED)
+                return
+
+            self.log.info(TESTS_PASSED)
             if "success" == project.deploy():
-                self.log.info("Deployment successful")
-                self.send_email("Deployment completed successfully")
+                self.log.info(DEPLOYMENT_SUCCESSFUL)
+                self.send_email(COMPLETED_SUCCESSFULLY)
             else:
-                self.log.error("Deployment failed")
-                self.send_email("Deployment failed")
+                self.log.error(DEPLOYMENT_FAILED)
+                self.send_email(DEPLOYMENT_FAILED)
+        else:
+            self.log.info(NO_TESTS)
+            if "success" == project.deploy():
+                self.log.info(DEPLOYMENT_SUCCESSFUL)
+                self.send_email(COMPLETED_SUCCESSFULLY)
+            else:
+                self.log.error(DEPLOYMENT_FAILED)
+                self.send_email(DEPLOYMENT_FAILED)
 
     def send_email(self, email_message):
         if self.config.send_email_summary():
