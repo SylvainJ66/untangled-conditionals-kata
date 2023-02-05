@@ -20,20 +20,15 @@ class Pipeline:
                 return
 
             self.log.info(TESTS_PASSED)
-            if "success" == project.deploy():
-                self.log.info(DEPLOYMENT_SUCCESSFUL)
-                self.send_email(COMPLETED_SUCCESSFULLY)
-            else:
-                self.log.error(DEPLOYMENT_FAILED)
-                self.send_email(DEPLOYMENT_FAILED)
         else:
             self.log.info(NO_TESTS)
-            if "success" == project.deploy():
-                self.log.info(DEPLOYMENT_SUCCESSFUL)
-                self.send_email(COMPLETED_SUCCESSFULLY)
-            else:
-                self.log.error(DEPLOYMENT_FAILED)
-                self.send_email(DEPLOYMENT_FAILED)
+
+        if "success" == project.deploy():
+            self.log.info(DEPLOYMENT_SUCCESSFUL)
+            self.send_email(COMPLETED_SUCCESSFULLY)
+        else:
+            self.log.error(DEPLOYMENT_FAILED)
+            self.send_email(DEPLOYMENT_FAILED)
 
     def send_email(self, email_message):
         if self.config.send_email_summary():
