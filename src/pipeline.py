@@ -34,17 +34,19 @@ class Pipeline:
             if "success" == project.deploy():
                 self.log.info("Deployment successful")
                 deploy_successful = True
+                if self.config.send_email_summary():
+                    self.log.info("Sending email")
+                    self.emailer.send("Deployment completed successfully")
+                else:
+                    self.log.info("Email disabled")
             else:
                 self.log.error("Deployment failed")
                 deploy_successful = False
-            if self.config.send_email_summary():
-                self.log.info("Sending email")
-                if deploy_successful:
-                    self.emailer.send("Deployment completed successfully")
-                else:
+                if self.config.send_email_summary():
+                    self.log.info("Sending email")
                     self.emailer.send("Deployment failed")
-            else:
-                self.log.info("Email disabled")
+                else:
+                    self.log.info("Email disabled")
 
 
 
