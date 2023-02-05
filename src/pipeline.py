@@ -5,44 +5,28 @@ class Pipeline:
         self.log = log
 
     def run(self, project):
-
-        if project.has_tests():
-            if "success" == project.run_tests():
-                self.log.info("Tests passed")
-                if "success" == project.deploy():
-                    self.log.info("Deployment successful")
-                    if self.config.send_email_summary():
-                        self.log.info("Sending email")
-                        self.emailer.send("Deployment completed successfully")
-                    else:
-                        self.log.info("Email disabled")
-                else:
-                    self.log.error("Deployment failed")
-                    if self.config.send_email_summary():
-                        self.log.info("Sending email")
-                        self.emailer.send("Deployment failed")
-                    else:
-                        self.log.info("Email disabled")
-            else:
-                self.log.error("Tests failed")
-                if self.config.send_email_summary():
-                    self.log.info("Sending email")
-                    self.emailer.send("Tests failed")
-                else:
-                    self.log.info("Email disabled")
-        else:
+        if not project.has_tests():
             self.log.info("No tests")
-            if "success" == project.deploy():
-                self.log.info("Deployment successful")
-                if self.config.send_email_summary():
-                    self.log.info("Sending email")
-                    self.emailer.send("Deployment completed successfully")
-                else:
-                    self.log.info("Email disabled")
-            else:
-                self.log.error("Deployment failed")
-                if self.config.send_email_summary():
-                    self.log.info("Sending email")
-                    self.emailer.send("Deployment failed")
-                else:
-                    self.log.info("Email disabled")
+            self.deploy(project)
+            return
+        if project.run_tests() != "success":
+            self.log.error("Tests failed")
+            self.send_email("Tests failed")
+            return
+        self.log.info("Tests passed")
+        self.deploy(project)
+
+    def deploy(self, project):
+        if project.deploy() != "success":
+            self.log.error("Deployment failed")
+            self.send_email("Deployment failed")
+            return
+        self.log.info("Deployment successful")
+        self.send_email("Deployment completed successfully")
+
+    def send_email(self, message):
+        if self.config.send_email_summary():
+            self.log.info("Sending email")
+            self.emailer.send(message)
+        else:
+            self.log.info("Email disabled")
