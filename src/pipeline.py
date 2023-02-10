@@ -5,28 +5,38 @@ class Pipeline:
         self.log = log
 
     def run(self, project):
-        if not project.has_tests():
+        tests_passed = False
+        deploy_successful = False
+
+        if project.has_tests():
+            if "success" == project.run_tests():
+                self.log.info("Tests passed")
+                tests_passed = True
+            else:
+                self.log.error("Tests failed")
+                tests_passed = False
+        else:
             self.log.info("No tests")
-            self.deploy(project)
-            return
-        if project.run_tests() != "success":
-            self.log.error("Tests failed")
-            self.send_email("Tests failed")
-            return
-        self.log.info("Tests passed")
-        self.deploy(project)
+            tests_passed = True
 
-    def deploy(self, project):
-        if project.deploy() != "success":
-            self.log.error("Deployment failed")
-            self.send_email("Deployment failed")
-            return
-        self.log.info("Deployment successful")
-        self.send_email("Deployment completed successfully")
+        if tests_passed:
+            if "success" == project.deploy():
+                self.log.info("Deployment successful")
+                deploy_successful = True
+            else:
+                self.log.error("Deployment failed")
+                deploy_successful = False
+        else:
+            deploy_successful = False
 
-    def send_email(self, message):
         if self.config.send_email_summary():
             self.log.info("Sending email")
-            self.emailer.send(message)
+            if tests_passed:
+                if deploy_successful:
+                    self.emailer.send("Deployment completed successfully")
+                else:
+                    self.emailer.send("Deployment failed")
+            else:
+                self.emailer.send("Tests failed")
         else:
             self.log.info("Email disabled")
