@@ -5,9 +5,6 @@ class Pipeline:
         self.log = log
 
     def run(self, project):
-        tests_passed = False
-        deploy_successful = False
-
         if project.has_tests():
             if "success" == project.run_tests():
                 self.log.info("Tests passed")
