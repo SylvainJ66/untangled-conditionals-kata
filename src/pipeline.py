@@ -1,3 +1,11 @@
+class TestFailed(Exception):
+    pass
+
+
+class DeploymentFailed(Exception):
+    pass
+
+
 class Pipeline:
     def __init__(self, config, emailer, log):
         self.config = config
@@ -5,44 +13,36 @@ class Pipeline:
         self.log = log
 
     def run(self, project):
-        tests_passed = self.run_tests(project)
-        deploy_successful = self.deploy(project, tests_passed)
-        self.send_email_summary(deploy_successful, tests_passed)
-
-    def send_email_summary(self, deploy_successful, tests_passed):
-        if self.config.send_email_summary():
-            self.log.info("Sending email")
-            if tests_passed:
-                if deploy_successful:
-                    self.emailer.send("Deployment completed successfully")
-                else:
-                    self.emailer.send("Deployment failed")
-            else:
-                self.emailer.send("Tests failed")
+        try:
+            self.run_tests(project)
+            self.deploy(project)
+        except TestFailed:
+            self.send_email_summary("Tests failed")
+        except DeploymentFailed:
+            self.send_email_summary("Deployment failed")
         else:
+            self.send_email_summary("Deployment completed successfully")
+
+    def send_email_summary(self, summary):
+        if not self.config.send_email_summary():
             self.log.info("Email disabled")
+            return
+        self.log.info("Sending email")
+        self.emailer.send(summary)
 
-    def deploy(self, project, tests_passed):
-        if tests_passed:
-            if "success" == project.deploy():
-                self.log.info("Deployment successful")
-                deploy_successful = True
-            else:
-                self.log.error("Deployment failed")
-                deploy_successful = False
-        else:
-            deploy_successful = False
-        return deploy_successful
+    def deploy(self, project):
+        if "success" != project.deploy():
+            self.log.error("Deployment failed")
+            raise DeploymentFailed
+        self.log.info("Deployment successful")
+        return
 
     def run_tests(self, project):
-        if project.has_tests():
-            if "success" == project.run_tests():
-                self.log.info("Tests passed")
-                tests_passed = True
-            else:
-                self.log.error("Tests failed")
-                tests_passed = False
-        else:
+        if not project.has_tests():
             self.log.info("No tests")
-            tests_passed = True
-        return tests_passed
+            return
+        if "success" == project.run_tests():
+            self.log.info("Tests passed")
+            return
+        self.log.error("Tests failed")
+        raise TestFailed
